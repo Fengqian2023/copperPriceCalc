@@ -151,6 +151,8 @@ def main():
 
           
             history = history.T  
+            history = history[sorted(history.columns, reverse=True)]
+            history.columns = [str(i) for i in history.columns]
             
             column_config = {}
             for c in history.columns:
@@ -159,7 +161,7 @@ def main():
             st.dataframe(history, 
                         use_container_width=True,
                         height=430,  # 调整 width 和 height 以适应您的需求 
-                        column_config=column_config 
+                        column_config=column_config  
                         )   
 
 
