@@ -130,7 +130,7 @@ def main():
 
             column_config = {}
             for c in history.columns:
-                column_config[c] = st.column_config.Column(label=c, width='medium')
+                column_config[c] = st.column_config.Column(label=c, width='large')
             st.dataframe(history, 
                         # width=2000, 
                         height=430, 
@@ -156,7 +156,7 @@ def main():
             
             column_config = {}
             for c in history.columns:
-                column_config[c] = st.column_config.Column(label=c, width=500)
+                column_config[c] = st.column_config.Column(label=c, width='large')
 
             st.dataframe(history, 
                         use_container_width=True,
