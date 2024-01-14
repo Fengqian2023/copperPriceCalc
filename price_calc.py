@@ -11,14 +11,20 @@ import os
 
 
 
+
+
+
 # Function to calculate weight and price
 def calculate_weight_and_price(inner_diameter, outer_diameter, height, price_per_kg,
                                                     edge_inner, edge_outer, edge_height):
     # Assuming copper density is 8.96 g/cm^3 (you can adjust as needed)
+
+                                                      
     density = 8960 # kg/m3  
     volume = 3.1416 * (height/1000) * ((outer_diameter/(2*1000))**2 - (inner_diameter/(2*1000))**2)
     weight = density * volume  # Convert to kg 
     price = weight * price_per_kg * 2 
+
 
                                                       
     # 沿
@@ -29,6 +35,7 @@ def calculate_weight_and_price(inner_diameter, outer_diameter, height, price_per
 
 
     return weight + edge_weight, price + edge_price
+
 
 
 
@@ -50,6 +57,7 @@ def main():
 
 
   
+  
     # edge
     with col2:
         edge_inner = st.number_input("沿-内径 (mm)", min_value=0.0, value=0.00, format="%.2f") 
@@ -57,6 +65,7 @@ def main():
         edge_height = st.number_input("沿-高 (mm)", min_value=0.0, value=0.00, format="%.2f") 
         # 备注
         mark = st.text_input('备注', value='')
+
 
 
   
@@ -80,19 +89,38 @@ def main():
         # 时间戳 
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Save the calculation to a session state for history
-        if 'history' not in st.session_state:
-            st.session_state.history = []
-        st.session_state.history.append((inner_diameter, 
-                                        outer_diameter, 
-                                        height, 
-                                        edge_inner, edge_outer, edge_height, 
-                                        price_per_kg, 
-                                        round(weight * 2, 2), 
-                                        round(price, 2), 
-                                        current_time, 
-                                        mark)
-                                        )
+        # 计算结果保存
+        curPage_df = pd.DataFrame([[inner_diameter, 
+                                    outer_diameter, 
+                                    height, 
+                                    edge_inner, edge_outer, edge_height, 
+                                    price_per_kg, 
+                                    round(weight * 2, 2), 
+                                    round(price, 2), 
+                                    current_time, 
+                                    mark]], 
+                                    columns=["内径(mm)", "外径(mm)", "高(mm)", 
+                                             "沿-内径(mm)", "沿-外径(mm)", "沿-高(mm)", 
+                                             "单价(元/斤)", "重量(斤)", 
+                                             "价格(元/个)", '时间', '备注'])
+
+
+
+      
+        if os.path.exists('./history_record.csv'):
+            history = pd.read_csv('./history_record.csv')
+        else:
+            history = pd.DataFrame(columns=["内径(mm)", "外径(mm)", "高(mm)", "沿-内径(mm)", "沿-外径(mm)", "沿-高(mm)", 
+                                             "单价(元/斤)", "重量(斤)", 
+                                             "价格(元/个)", '时间', '备注'])
+
+        history = pd.concat((history, curPage_df), axis=0) 
+        history = history.drop_duplicates(keep='first').reset_index(drop=True)
+        history.to_csv('./history_record.csv', index=False) 
+
+
+  
+
 
     # Display history
     if st.button("历史记录"):
@@ -104,65 +132,36 @@ def main():
 
 
 
-        if 'history' in st.session_state:
-            curPage_df = pd.DataFrame(st.session_state.history, 
-                                        columns=["内径(mm)", "外径(mm)", "高(mm)", 
-                                                 "沿-内径(mm)", "沿-外径(mm)", "沿-高(mm)", 
-                                                 "单价(元/斤)", "重量(斤)", 
-                                                 "价格(元/个)", '时间', '备注'])
-            
-            
-
-            if os.path.exists('./history_record.csv'):
-                history = pd.read_csv('./history_record.csv')
-            else:
-                history = pd.DataFrame(columns=["内径(mm)", "外径(mm)", "高(mm)", "沿-内径(mm)", "沿-外径(mm)", "沿-高(mm)", 
-                                                 "单价(元/斤)", "重量(斤)", 
-                                                 "价格(元/个)", '时间', '备注'])
-                
-            
-            history = pd.concat((history, curPage_df), axis=0) 
-            history = history.drop_duplicates(keep='first').reset_index(drop=True)
-            history.to_csv('./history_record.csv', index=False) 
-            history = history.T 
-            history = history[sorted(history.columns, reverse=True)]
-            history.columns = [str(i) for i in history.columns]
-
-            column_config = {}
-            for c in history.columns:
-                column_config[c] = st.column_config.Column(label=c, width='large')
-            st.dataframe(history, 
-                        # width=2000, 
-                        height=430, 
-                        # use_container_width=True, 
-                        column_config=column_config 
-                        )  # 调整 width 和 height 以适应您的需求
-
+      
+        if os.path.exists('./history_record.csv'):
+            history = pd.read_csv('./history_record.csv')
         else:
-            if os.path.exists('./history_record.csv'):
-                history = pd.read_csv('./history_record.csv') 
-            else:
-                history = pd.DataFrame(columns=["内径(mm)", "外径(mm)", "高(mm)", "沿-内径(mm)", "沿-外径(mm)", "沿-高(mm)", 
-                                                 "单价(元/斤)", "重量(斤)", 
-                                                 "价格(元/个)", '时间', '备注'])
+            history = pd.DataFrame(columns=["内径(mm)", "外径(mm)", "高(mm)", "沿-内径(mm)", "沿-外径(mm)", "沿-高(mm)", 
+                                             "单价(元/斤)", "重量(斤)", 
+                                             "价格(元/个)", '时间', '备注'])
+                
+
+
+      
+        history = history.T 
+        history = history[sorted(history.columns, reverse=True)]
+        history.columns = [str(i) for i in history.columns]
+
+
+      
+        # 宽度设置 
+        column_config = {}
+        for c in history.columns:
+            column_config[c] = st.column_config.Column(label=c, width='large')
+        st.dataframe(history, 
+                    # width=2000, 
+                    height=430, 
+                    # use_container_width=True, 
+                    column_config=column_config 
+                    )  # 调整 width 和 height 以适应您的需求
 
 
 
-
-          
-            history = history.T  
-            history = history[sorted(history.columns, reverse=True)]
-            history.columns = [str(i) for i in history.columns]
-            
-            column_config = {}
-            for c in history.columns:
-                column_config[c] = st.column_config.Column(label=c, width='large')
-
-            st.dataframe(history, 
-                        use_container_width=True,
-                        height=430,  # 调整 width 和 height 以适应您的需求 
-                        column_config=column_config  
-                        )   
 
 
 
